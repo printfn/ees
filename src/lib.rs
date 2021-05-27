@@ -174,7 +174,7 @@ mod tests {
 
     #[test]
     fn to_err_tests() {
-        let error = test_bail().unwrap_err();
+        let error: crate::Error = test_bail().unwrap_err();
         let actual_error = crate::to_err(error);
         let actual_error_2 = crate::to_err(actual_error);
         assert_eq!(
