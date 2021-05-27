@@ -52,3 +52,9 @@ impl error::Error for WrapError {
         self.inner.source()
     }
 }
+
+pub fn make_opaque(
+    error: impl error::Error + Send + Sync + 'static,
+) -> impl error::Error + Send + Sync + 'static {
+    error
+}
