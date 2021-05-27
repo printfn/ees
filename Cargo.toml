@@ -7,6 +7,8 @@ license = "CC0-1.0"
 description = "Simple error-handling library"
 categories = ["rust-patterns"]
 keywords = ["error-handling", "error"]
+homepage = "https://github.com/printfn/ees"
+repository = "https://github.com/printfn/ees"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
