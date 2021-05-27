@@ -12,20 +12,20 @@ fn do_work() -> Result<(), ees::Error> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
     if contents.is_empty() {
-        // Construct an error on the fly with a given message
+        // Construct an error on the fly
         ees::bail!("file is empty");
     }
     Ok(())
 }
 
-// ees::ErrorRef<'_> represents an arbitrary borrowed error
+// Take an arbitrary borrowed error
 fn take_an_error(error: ees::ErrorRef<'_>) {
     // Print the complete error chain
     println!("Error: {}", ees::print_error_chain(error));
 }
 
-// Use ees::MainResult to automatically create nicely-formatted error messages
-// in the main() function
+// Use ees::MainResult to automatically create nicely-
+// formatted error messages in the main() function
 fn main() -> ees::MainResult {
     do_work()?;
     Ok(())
