@@ -1,6 +1,6 @@
 //! This library is intended to provide simple error-handling-related helper functions
 //! and types. Rather than provide its own error-related types, it is centered around
-//! the [std::error::Error] type.
+//! the [std::error::Error] trait.
 //!
 //! Usage:
 //! ```no_run
