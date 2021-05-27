@@ -153,7 +153,7 @@ macro_rules! err {
 #[macro_export]
 macro_rules! bail {
     ($($arg:tt)*) => {
-        return Err($crate::err!($($arg)*));
+        return Err($crate::err!($($arg)*).into());
     }
 }
 
@@ -182,5 +182,13 @@ mod tests {
         let e = crate::err!("hello {}", "world");
         let owned: crate::Error = e.into();
         assert_eq!(owned.to_string(), "hello world");
+    }
+
+    fn _test_bail() -> Result<(), crate::Error> {
+        crate::bail!("bailing");
+    }
+
+    fn _test_bail_main_result() -> crate::MainResult {
+        crate::bail!("test bail");
     }
 }
