@@ -28,6 +28,8 @@ fn take_an_error(error: ees::ErrorRef<'_>) {
 // formatted error messages in the main() function
 fn main() -> ees::MainResult {
     do_work()?;
+    do_work().map_err(
+        |e| ees::wrap!(e, "failed to do work"))?;
     Ok(())
 }
 ```

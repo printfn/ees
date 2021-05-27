@@ -5,7 +5,7 @@
 //! Usage:
 //! ```no_run
 //! use std::io::Read;
-//! 
+//!
 //! // Use ees::Error for arbitrary owned errors
 //! fn do_work() -> Result<(), ees::Error> {
 //!     let mut file = std::fs::File::open("hello world")?;
@@ -17,17 +17,19 @@
 //!     }
 //!     Ok(())
 //! }
-//! 
+//!
 //! // Take an arbitrary borrowed error
 //! fn take_an_error(error: ees::ErrorRef<'_>) {
 //!     // Print the complete error chain
 //!     println!("Error: {}", ees::print_error_chain(error));
 //! }
-//! 
+//!
 //! // Use ees::MainResult to automatically create nicely-
 //! // formatted error messages in the main() function
 //! fn main() -> ees::MainResult {
 //!     do_work()?;
+//!     do_work().map_err(
+//!         |e| ees::wrap!(e, "failed to do work"))?;
 //!     Ok(())
 //! }
 //! ```
@@ -80,6 +82,7 @@ impl fmt::Display for SimpleStringError {
 impl error::Error for SimpleStringError {}
 
 /// Create a new error with a given message
+#[deprecated = "Use ees::err!() instead"]
 #[must_use]
 pub fn error_with_message(message: &'static str) -> Error {
     SimpleStringError { message }.into()
@@ -104,6 +107,7 @@ impl error::Error for SourceStringError {
 }
 
 /// Wrap the given error in a new error, with the given error message
+#[deprecated = "Use ees::wrap!() instead"]
 #[must_use]
 pub fn add_message(error: Error, message: &'static str) -> Error {
     SourceStringError {
@@ -145,7 +149,9 @@ pub type MainResult = Result<(), MainError>;
 #[macro_export]
 macro_rules! err {
     ($($arg:tt)*) => {
-        Box::new($crate::internal::FormattedError { message: format!($($arg)*) })
+        $crate::Error::from($crate::internal::FormattedError {
+            message: std::format!($($arg)*),
+        })
     }
 }
 
@@ -154,6 +160,17 @@ macro_rules! err {
 macro_rules! bail {
     ($($arg:tt)*) => {
         return Err($crate::err!($($arg)*).into());
+    }
+}
+
+/// Wrap an error in a new on-the-fly error
+#[macro_export]
+macro_rules! wrap {
+    ($source:expr, $($arg:tt)*) => {
+        $crate::Error::from($crate::internal::FormattedWrapError {
+            message: std::format!($($arg)*),
+            source: ($source),
+        })
     }
 }
 
@@ -170,11 +187,13 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn messages() {
         let e = crate::error_with_message("unknown error");
         let e = crate::add_message(e, "generic error");
+        let e = crate::wrap!(e, "{}", "test");
         let printed = crate::print_error_chain(e.as_ref());
-        assert_eq!(printed.to_string(), "generic error: unknown error");
+        assert_eq!(printed.to_string(), "test: generic error: unknown error");
     }
 
     #[test]
