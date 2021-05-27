@@ -30,3 +30,25 @@ impl error::Error for FormattedWrapError {
         Some(self.source.as_ref())
     }
 }
+
+pub(crate) struct WrapError {
+    pub(crate) inner: crate::Error,
+}
+
+impl fmt::Debug for WrapError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl fmt::Display for WrapError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl error::Error for WrapError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        self.inner.source()
+    }
+}

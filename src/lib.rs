@@ -47,13 +47,13 @@ pub type ErrorRef<'a> = &'a (dyn error::Error + 'static);
 
 #[derive(Debug)]
 struct ErrorChain<'a> {
-    error: ErrorRef<'a>,
+    error: std::sync::Arc<dyn error::Error + 'a>,
 }
 
 impl fmt::Display for ErrorChain<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut error = self.error;
-        write!(f, "{}", error)?;
+        let mut error = self.error.as_ref();
+        write!(f, "{}", &error)?;
         while let Some(inner) = error.source() {
             write!(f, ": {}", inner)?;
             error = inner;
@@ -64,8 +64,10 @@ impl fmt::Display for ErrorChain<'_> {
 
 /// Print the complete error chain of an error, separated with colons
 #[must_use]
-pub fn print_error_chain<'a>(error: ErrorRef<'a>) -> impl fmt::Display + 'a {
-    ErrorChain { error }
+pub fn print_error_chain<'a>(error: impl error::Error + 'a) -> impl fmt::Display + 'a {
+    ErrorChain {
+        error: std::sync::Arc::new(error),
+    }
 }
 
 #[derive(Debug)]
@@ -174,6 +176,15 @@ macro_rules! wrap {
     }
 }
 
+/// Convert any error into a type that implements [std::error::Error]. This
+/// is mainly useful for converting [Error](crate::Error) types to `anyhow::Error`
+/// or similar.
+pub fn to_err(error: impl Into<Error>) -> impl error::Error + Send + Sync + 'static {
+    internal::WrapError {
+        inner: error.into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::ops::Deref;
@@ -203,11 +214,22 @@ mod tests {
         assert_eq!(owned.to_string(), "hello world");
     }
 
-    fn _test_bail() -> Result<(), crate::Error> {
+    fn test_bail() -> Result<(), crate::Error> {
         crate::bail!("bailing");
     }
 
     fn _test_bail_main_result() -> crate::MainResult {
         crate::bail!("test bail");
+    }
+
+    #[test]
+    fn to_err_tests() {
+        let error = test_bail().unwrap_err();
+        let actual_error = crate::to_err(error);
+        let actual_error_2 = crate::to_err(actual_error);
+        assert_eq!(
+            crate::print_error_chain(&actual_error_2).to_string(),
+            "bailing"
+        );
     }
 }
