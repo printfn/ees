@@ -13,7 +13,7 @@ fn do_work() -> Result<(), ees::Error> {
     file.read_to_string(&mut contents)?;
     if contents.is_empty() {
         // Construct an error on the fly with a given message
-        return Err(ees::error_with_message("file is empty"));
+        ees::bail!("file is empty");
     }
     Ok(())
 }

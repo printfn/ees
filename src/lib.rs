@@ -13,7 +13,7 @@
 //!     file.read_to_string(&mut contents)?;
 //!     if contents.is_empty() {
 //!         // Construct an error on the fly with a given message
-//!         return Err(ees::error_with_message("file is empty"));
+//!         ees::bail!("file is empty");
 //!     }
 //!     Ok(())
 //! }
@@ -31,6 +31,9 @@
 //!     Ok(())
 //! }
 //! ```
+
+#[doc(hidden)]
+pub mod internal;
 
 use std::{error, fmt};
 
@@ -138,6 +141,22 @@ impl<E: Into<Error>> From<E> for MainError {
 /// A convenient way to return arbitrary errors from `main()`
 pub type MainResult = Result<(), MainError>;
 
+/// Construct an error on the fly
+#[macro_export]
+macro_rules! err {
+    ($($arg:tt)*) => {
+        Box::new($crate::internal::FormattedError { message: format!($($arg)*) })
+    }
+}
+
+/// Construct an error on the fly, and immediately return from the current function
+#[macro_export]
+macro_rules! bail {
+    ($($arg:tt)*) => {
+        return Err($crate::err!($($arg)*));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::ops::Deref;
@@ -156,5 +175,12 @@ mod tests {
         let e = crate::add_message(e, "generic error");
         let printed = crate::print_error_chain(e.as_ref());
         assert_eq!(printed.to_string(), "generic error: unknown error");
+    }
+
+    #[test]
+    fn formatted() {
+        let e = crate::err!("hello {}", "world");
+        let owned: crate::Error = e.into();
+        assert_eq!(owned.to_string(), "hello world");
     }
 }
