@@ -47,7 +47,7 @@ pub type ErrorRef<'a> = &'a (dyn error::Error + 'static);
 
 #[derive(Debug)]
 struct ErrorChain<'a> {
-    error: std::sync::Arc<dyn error::Error + 'a>,
+    error: Box<dyn error::Error + 'a>,
 }
 
 impl fmt::Display for ErrorChain<'_> {
@@ -66,7 +66,7 @@ impl fmt::Display for ErrorChain<'_> {
 #[must_use]
 pub fn print_error_chain<'a>(error: impl error::Error + 'a) -> impl fmt::Display + 'a {
     ErrorChain {
-        error: std::sync::Arc::new(error),
+        error: Box::new(error),
     }
 }
 
