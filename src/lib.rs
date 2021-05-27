@@ -117,13 +117,13 @@ pub struct MainError {
 
 impl fmt::Display for MainError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Error: {}", print_error_chain(self.error.as_ref()))
+        write!(f, "{}", print_error_chain(self.error.as_ref()))
     }
 }
 
 impl fmt::Debug for MainError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Error: {}", print_error_chain(self.error.as_ref()))
+        write!(f, "{}", print_error_chain(self.error.as_ref()))
     }
 }
 
