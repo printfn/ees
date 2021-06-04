@@ -104,13 +104,13 @@ pub type MainResult = Result<(), MainError>;
 macro_rules! err {
     ($string:literal) => {
         $crate::internal::make_opaque($crate::internal::FormattedError {
-            message: ::std::borrow::Cow::from($string),
+            message: ::std::borrow::Cow::Borrowed($string),
         })
     };
 
     ($($arg:tt)*) => {
         $crate::internal::make_opaque($crate::internal::FormattedError {
-            message: ::std::format!($($arg)*).into(),
+            message: ::std::borrow::Cow::Owned(::std::format!($($arg)*).into()),
         })
     }
 }
@@ -128,14 +128,14 @@ macro_rules! bail {
 macro_rules! wrap {
     ($source:expr, $string:literal) => {
         $crate::internal::make_opaque($crate::internal::FormattedWrapError {
-            message: ::std::borrow::Cow::from($string),
+            message: ::std::borrow::Cow::Borrowed($string),
             source: ($source).into(),
         })
     };
 
     ($source:expr, $($arg:tt)*) => {
         $crate::internal::make_opaque($crate::internal::FormattedWrapError {
-            message: ::std::format!($($arg)*).into(),
+            message: ::std::borrow::Cow::Owned(::std::format!($($arg)*)),
             source: ($source).into(),
         })
     }
