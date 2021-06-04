@@ -44,24 +44,19 @@ impl error::Error for FormattedWrapError {
 }
 
 #[inline]
-pub fn wrap_error_from_string_literal(
+#[must_use]
+pub fn wrap_error_from_args(
     source: impl Into<crate::Error>,
-    message: &'static str,
+    args: fmt::Arguments<'_>,
 ) -> impl error::Error + Send + Sync + 'static {
+    let message = if let Some(message) = args.as_str() {
+        borrow::Cow::Borrowed(message)
+    } else {
+        borrow::Cow::Owned(fmt::format(args))
+    };
     FormattedWrapError {
-        message: borrow::Cow::Borrowed(message),
         source: source.into(),
-    }
-}
-
-#[inline]
-pub fn wrap_error_from_string(
-    source: impl Into<crate::Error>,
-    message: String,
-) -> impl error::Error + Send + Sync + 'static {
-    FormattedWrapError {
-        message: borrow::Cow::Owned(message),
-        source: source.into(),
+        message,
     }
 }
 

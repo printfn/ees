@@ -103,9 +103,13 @@ pub type MainResult = Result<(), MainError>;
 /// Construct an error on the fly
 #[macro_export]
 macro_rules! err {
-    ($fmt:expr $(, $arg:tt)*) => {
-        $crate::internal::error_from_args(::std::format_args!($fmt, $($arg)*))
-    }
+    ($fmt:expr) => {
+        $crate::internal::error_from_args(::std::format_args!($fmt))
+    };
+
+    ($fmt:expr, $($args:tt)*) => {
+        $crate::internal::error_from_args(::std::format_args!($fmt, $($args)*))
+    };
 }
 
 /// Construct an error on the fly, and immediately return from the current function
@@ -113,19 +117,19 @@ macro_rules! err {
 macro_rules! bail {
     ($($arg:tt)*) => {
         return Err(::std::convert::Into::into($crate::err!($($arg)*)));
-    }
+    };
 }
 
 /// Wrap an error in a new on-the-fly error
 #[macro_export]
 macro_rules! wrap {
-    ($source:expr, $string:literal) => {
-        $crate::internal::wrap_error_from_string_literal($source, $string)
+    ($source:expr, $fmt:expr) => {
+        $crate::internal::wrap_error_from_args($source, ::std::format_args!($fmt))
     };
 
-    ($source:expr, $($arg:tt)*) => {
-        $crate::internal::wrap_error_from_string($source, ::std::format!($($arg)*))
-    }
+    ($source:expr, $fmt:expr, $($args:tt)*) => {
+        $crate::internal::wrap_error_from_args($source, ::std::format_args!($fmt, $($args)*))
+    };
 }
 
 /// Convert any error into a type that implements [std::error::Error]. This
@@ -153,7 +157,7 @@ mod tests {
     #[test]
     fn messages() {
         let e = crate::err!("unknown error");
-        let _e2 = crate::err!("unknown error {}", 7);
+        let _e2 = crate::err!("unknown error {}{3}{1}{2}{1}", 7, 3, 5, 1);
         let e = crate::wrap!(e, "te{}{}", "st", 1);
         let e = crate::wrap!(e, "outer test");
         let printed = crate::print_error_chain(e);
@@ -203,6 +207,8 @@ mod tests {
 
     #[test]
     fn unused_return_value() {
-        let _ = crate::err!("unknown error {}", 7);
+        // both err!() and wrap!() should show a warning if they are unused
+        let e = crate::err!("unknown error {}", 7);
+        let _ = crate::wrap!(e, "unknown error {}", 7);
     }
 }
