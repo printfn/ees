@@ -182,4 +182,8 @@ mod tests {
             "bailing"
         );
     }
+
+    fn _test_wrap_io_err() {
+        std::fs::File::open("hello").map_err(|e| wrap!(e, "error")).unwrap_err();
+    }
 }
