@@ -110,7 +110,7 @@ macro_rules! err {
 
     ($($arg:tt)*) => {
         $crate::internal::make_opaque($crate::internal::FormattedError {
-            message: ::std::borrow::Cow::Owned(::std::format!($($arg)*).into()),
+            message: ::std::borrow::Cow::Owned(::std::format!($($arg)*)),
         })
     }
 }
