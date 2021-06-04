@@ -101,9 +101,15 @@ pub type MainResult = Result<(), MainError>;
 /// Construct an error on the fly
 #[macro_export]
 macro_rules! err {
+    ($string:literal) => {
+        $crate::internal::make_opaque($crate::internal::FormattedError {
+            message: ::std::borrow::Cow::from($string),
+        })
+    };
+
     ($($arg:tt)*) => {
         $crate::internal::make_opaque($crate::internal::FormattedError {
-            message: std::format!($($arg)*),
+            message: ::std::format!($($arg)*).into(),
         })
     }
 }
@@ -119,9 +125,16 @@ macro_rules! bail {
 /// Wrap an error in a new on-the-fly error
 #[macro_export]
 macro_rules! wrap {
+    ($source:expr, $string:literal) => {
+        $crate::internal::make_opaque($crate::internal::FormattedWrapError {
+            message: ::std::borrow::Cow::from($string),
+            source: ($source).into(),
+        })
+    };
+
     ($source:expr, $($arg:tt)*) => {
         $crate::internal::make_opaque($crate::internal::FormattedWrapError {
-            message: std::format!($($arg)*),
+            message: ::std::format!($($arg)*).into(),
             source: ($source).into(),
         })
     }
@@ -149,12 +162,12 @@ mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
     fn messages() {
         let e = crate::err!("unknown error");
-        let e = crate::wrap!(e, "{}", "test");
+        let e = crate::wrap!(e, "te{}{}", "st", 1);
+        let e = crate::wrap!(e, "outer test");
         let printed = crate::print_error_chain(e);
-        assert_eq!(printed.to_string(), "test: unknown error");
+        assert_eq!(printed.to_string(), "outer test: test1: unknown error");
     }
 
     #[test]
@@ -183,7 +196,10 @@ mod tests {
         );
     }
 
-    fn _test_wrap_io_err() {
-        std::fs::File::open("hello").map_err(|e| wrap!(e, "error")).unwrap_err();
+    #[test]
+    fn test_wrap_io_err() {
+        std::fs::File::open("hello")
+            .map_err(|e| wrap!(e, "error"))
+            .unwrap_err();
     }
 }

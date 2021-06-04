@@ -1,8 +1,8 @@
-use std::{error, fmt};
+use std::{borrow, error, fmt};
 
 #[derive(Debug)]
 pub struct FormattedError {
-    pub message: String,
+    pub message: borrow::Cow<'static, str>,
 }
 
 impl fmt::Display for FormattedError {
@@ -15,7 +15,7 @@ impl error::Error for FormattedError {}
 
 #[derive(Debug)]
 pub struct FormattedWrapError {
-    pub message: String,
+    pub message: borrow::Cow<'static, str>,
     pub source: crate::Error,
 }
 
