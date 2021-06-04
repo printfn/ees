@@ -29,6 +29,7 @@
 //! fn main() -> ees::MainResult {
 //!     do_work()?;
 //!     do_work().map_err(
+//!         // add additional context
 //!         |e| ees::wrap!(e, "failed to do work"))?;
 //!     Ok(())
 //! }
