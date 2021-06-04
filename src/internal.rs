@@ -14,18 +14,14 @@ impl fmt::Display for FormattedError {
 impl error::Error for FormattedError {}
 
 #[inline]
-pub fn error_from_string_literal(
-    message: &'static str,
-) -> impl error::Error + Send + Sync + 'static {
+#[must_use]
+pub fn error_from_args(args: fmt::Arguments<'_>) -> impl error::Error + Send + Sync + 'static {
     FormattedError {
-        message: borrow::Cow::Borrowed(message),
-    }
-}
-
-#[inline]
-pub fn error_from_string(message: String) -> impl error::Error + Send + Sync + 'static {
-    FormattedError {
-        message: borrow::Cow::Owned(message),
+        message: if let Some(message) = args.as_str() {
+            borrow::Cow::Borrowed(message)
+        } else {
+            borrow::Cow::Owned(fmt::format(args))
+        },
     }
 }
 

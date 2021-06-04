@@ -103,12 +103,8 @@ pub type MainResult = Result<(), MainError>;
 /// Construct an error on the fly
 #[macro_export]
 macro_rules! err {
-    ($string:literal) => {
-        $crate::internal::error_from_string_literal($string)
-    };
-
-    ($($arg:tt)*) => {
-        $crate::internal::error_from_string(::std::format!($($arg)*))
+    ($fmt:expr $(, $arg:tt)*) => {
+        $crate::internal::error_from_args(::std::format_args!($fmt, $($arg)*))
     }
 }
 
@@ -157,6 +153,7 @@ mod tests {
     #[test]
     fn messages() {
         let e = crate::err!("unknown error");
+        let _e2 = crate::err!("unknown error {}", 7);
         let e = crate::wrap!(e, "te{}{}", "st", 1);
         let e = crate::wrap!(e, "outer test");
         let printed = crate::print_error_chain(e);
@@ -202,5 +199,10 @@ mod tests {
         let e = err!("hi");
         Err(wrap!(e, "wrap"))?;
         Ok(())
+    }
+
+    #[test]
+    fn unused_return_value() {
+        let _ = crate::err!("unknown error {}", 7);
     }
 }
