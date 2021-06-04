@@ -65,6 +65,7 @@ impl fmt::Display for ErrorChain<'_> {
 
 /// Print the complete error chain of an error, separated with colons
 #[must_use]
+#[inline]
 pub fn print_error_chain<'a>(error: impl error::Error + 'a) -> impl fmt::Display + 'a {
     ErrorChain {
         error: Box::new(error),
@@ -103,15 +104,11 @@ pub type MainResult = Result<(), MainError>;
 #[macro_export]
 macro_rules! err {
     ($string:literal) => {
-        $crate::internal::make_opaque($crate::internal::FormattedError {
-            message: ::std::borrow::Cow::Borrowed($string),
-        })
+        $crate::internal::error_from_string_literal($string)
     };
 
     ($($arg:tt)*) => {
-        $crate::internal::make_opaque($crate::internal::FormattedError {
-            message: ::std::borrow::Cow::Owned(::std::format!($($arg)*)),
-        })
+        $crate::internal::error_from_string(::std::format!($($arg)*))
     }
 }
 
@@ -119,7 +116,7 @@ macro_rules! err {
 #[macro_export]
 macro_rules! bail {
     ($($arg:tt)*) => {
-        return Err($crate::err!($($arg)*).into());
+        return Err(::std::convert::Into::into($crate::err!($($arg)*)));
     }
 }
 
@@ -127,23 +124,18 @@ macro_rules! bail {
 #[macro_export]
 macro_rules! wrap {
     ($source:expr, $string:literal) => {
-        $crate::internal::make_opaque($crate::internal::FormattedWrapError {
-            message: ::std::borrow::Cow::Borrowed($string),
-            source: ::std::convert::Into::into($source),
-        })
+        $crate::internal::wrap_error_from_string_literal($source, $string)
     };
 
     ($source:expr, $($arg:tt)*) => {
-        $crate::internal::make_opaque($crate::internal::FormattedWrapError {
-            message: ::std::borrow::Cow::Owned(::std::format!($($arg)*)),
-            source: ::std::convert::Into::into($source),
-        })
+        $crate::internal::wrap_error_from_string($source, ::std::format!($($arg)*))
     }
 }
 
 /// Convert any error into a type that implements [std::error::Error]. This
 /// is mainly useful for converting [Error](crate::Error) types to `anyhow::Error`
 /// or similar.
+#[inline]
 pub fn to_err(error: impl Into<Error>) -> impl error::Error + Send + Sync + 'static {
     internal::WrapError {
         inner: error.into(),
@@ -205,6 +197,8 @@ mod tests {
     }
 
     fn _return_wrap() -> Result<(), crate::Error> {
+        // test macro expansion by running:
+        // cargo +nightly rustc --profile=check -- -Zunstable-options --pretty=expanded --cfg test
         let e = err!("hi");
         Err(wrap!(e, "wrap"))?;
         Ok(())

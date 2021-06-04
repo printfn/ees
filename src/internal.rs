@@ -1,8 +1,8 @@
 use std::{borrow, error, fmt};
 
 #[derive(Debug)]
-pub struct FormattedError {
-    pub message: borrow::Cow<'static, str>,
+struct FormattedError {
+    message: borrow::Cow<'static, str>,
 }
 
 impl fmt::Display for FormattedError {
@@ -13,10 +13,26 @@ impl fmt::Display for FormattedError {
 
 impl error::Error for FormattedError {}
 
+#[inline]
+pub fn error_from_string_literal(
+    message: &'static str,
+) -> impl error::Error + Send + Sync + 'static {
+    FormattedError {
+        message: borrow::Cow::Borrowed(message),
+    }
+}
+
+#[inline]
+pub fn error_from_string(message: String) -> impl error::Error + Send + Sync + 'static {
+    FormattedError {
+        message: borrow::Cow::Owned(message),
+    }
+}
+
 #[derive(Debug)]
-pub struct FormattedWrapError {
-    pub message: borrow::Cow<'static, str>,
-    pub source: crate::Error,
+struct FormattedWrapError {
+    message: borrow::Cow<'static, str>,
+    source: crate::Error,
 }
 
 impl fmt::Display for FormattedWrapError {
@@ -28,6 +44,28 @@ impl fmt::Display for FormattedWrapError {
 impl error::Error for FormattedWrapError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(self.source.as_ref())
+    }
+}
+
+#[inline]
+pub fn wrap_error_from_string_literal(
+    source: impl Into<crate::Error>,
+    message: &'static str,
+) -> impl error::Error + Send + Sync + 'static {
+    FormattedWrapError {
+        message: borrow::Cow::Borrowed(message),
+        source: source.into(),
+    }
+}
+
+#[inline]
+pub fn wrap_error_from_string(
+    source: impl Into<crate::Error>,
+    message: String,
+) -> impl error::Error + Send + Sync + 'static {
+    FormattedWrapError {
+        message: borrow::Cow::Owned(message),
+        source: source.into(),
     }
 }
 
@@ -53,6 +91,7 @@ impl error::Error for WrapError {
     }
 }
 
+#[inline]
 pub fn make_opaque(
     error: impl error::Error + Send + Sync + 'static,
 ) -> impl error::Error + Send + Sync + 'static {
