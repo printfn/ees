@@ -129,14 +129,14 @@ macro_rules! wrap {
     ($source:expr, $string:literal) => {
         $crate::internal::make_opaque($crate::internal::FormattedWrapError {
             message: ::std::borrow::Cow::Borrowed($string),
-            source: ($source).into(),
+            source: ::std::convert::Into::into($source),
         })
     };
 
     ($source:expr, $($arg:tt)*) => {
         $crate::internal::make_opaque($crate::internal::FormattedWrapError {
             message: ::std::borrow::Cow::Owned(::std::format!($($arg)*)),
-            source: ($source).into(),
+            source: ::std::convert::Into::into($source),
         })
     }
 }
