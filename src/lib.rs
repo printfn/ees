@@ -203,4 +203,10 @@ mod tests {
             .map_err(|e| wrap!(e, "error"))
             .unwrap_err();
     }
+
+    fn _return_wrap() -> Result<(), crate::Error> {
+        let e = err!("hi");
+        Err(wrap!(e, "wrap"))?;
+        Ok(())
+    }
 }
