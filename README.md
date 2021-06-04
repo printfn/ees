@@ -7,6 +7,7 @@ types, it uses `std::error::Error` and provides a number of convenience function
 use std::io::Read;
 
 // Use ees::Error for arbitrary owned errors
+// You can also use ees::Result<()> as a shorthand
 fn do_work() -> Result<(), ees::Error> {
     let mut file = std::fs::File::open("hello world")?;
     let mut contents = String::new();
@@ -29,6 +30,7 @@ fn take_an_error(error: ees::ErrorRef<'_>) {
 fn main() -> ees::MainResult {
     do_work()?;
     do_work().map_err(
+        // add additional context
         |e| ees::wrap!(e, "failed to do work"))?;
     Ok(())
 }

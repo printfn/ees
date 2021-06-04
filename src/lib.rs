@@ -7,6 +7,7 @@
 //! use std::io::Read;
 //!
 //! // Use ees::Error for arbitrary owned errors
+//! // You can also use ees::Result<()> as a shorthand
 //! fn do_work() -> Result<(), ees::Error> {
 //!     let mut file = std::fs::File::open("hello world")?;
 //!     let mut contents = String::new();
@@ -45,6 +46,9 @@ pub type Error = Box<dyn error::Error + Send + Sync + 'static>;
 
 /// Represents an arbitrary borrowed error with a given lifetime
 pub type ErrorRef<'a> = &'a (dyn error::Error + 'static);
+
+/// `Result<T, Error>`
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
 struct ErrorChain<'a> {
@@ -98,7 +102,7 @@ impl<E: Into<Error>> From<E> for MainError {
 }
 
 /// A convenient way to return arbitrary errors from `main()`
-pub type MainResult = Result<(), MainError>;
+pub type MainResult = std::result::Result<(), MainError>;
 
 /// Construct an error on the fly
 #[macro_export]
