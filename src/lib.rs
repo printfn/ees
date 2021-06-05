@@ -59,9 +59,28 @@ impl fmt::Display for ErrorChain<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut error = self.error.as_ref();
         write!(f, "{}", &error)?;
-        while let Some(inner) = error.source() {
-            write!(f, ": {}", inner)?;
-            error = inner;
+        if f.alternate() {
+            if let Some(first_inner) = error.source() {
+                writeln!(f, "\n\nCaused by:")?;
+                if let Some(second_inner) = first_inner.source() {
+                    writeln!(f, "{: >5}: {}", 0, first_inner)?;
+                    writeln!(f, "{: >5}: {}", 1, second_inner)?;
+                    error = second_inner;
+                    let mut n = 2;
+                    while let Some(inner) = error.source() {
+                        writeln!(f, "{: >5}: {}", n, inner)?;
+                        error = inner;
+                        n += 1;
+                    }
+                } else {
+                    writeln!(f, "    {}", first_inner)?;
+                }
+            }
+        } else {
+            while let Some(inner) = error.source() {
+                write!(f, ": {}", inner)?;
+                error = inner;
+            }
         }
         Ok(())
     }
@@ -175,12 +194,18 @@ mod tests {
         assert_eq!(owned.to_string(), "hello world");
     }
 
-    fn test_bail() -> Result<(), crate::Error> {
-        crate::bail!("bailing");
+    fn test_bail_main_result() -> crate::MainResult {
+        crate::bail!("test bail");
     }
 
-    fn _test_bail_main_result() -> crate::MainResult {
-        crate::bail!("test bail");
+    #[test]
+    fn test_main_result_format() {
+        let e = test_bail_main_result().unwrap_err();
+        assert_eq!(format!("Error: {:?}", e), "Error: test bail");
+    }
+
+    fn test_bail() -> Result<(), crate::Error> {
+        crate::bail!("bailing");
     }
 
     #[test]
@@ -210,9 +235,64 @@ mod tests {
     }
 
     #[test]
-    fn unused_return_value() {
+    fn multiline_error_chain() {
         // both err!() and wrap!() should show a warning if they are unused
         let e = crate::err!("unknown error {}", 7);
-        let _ = crate::wrap!(e, "unknown error {}", 7);
+        let e = crate::wrap!(e, "unknown error {}", 7);
+        let e = crate::wrap!(e, "unknown error {}", 18);
+        assert_eq!(
+            format!("{:#}", crate::print_error_chain(e)),
+            "unknown error 18
+
+Caused by:
+    0: unknown error 7
+    1: unknown error 7\n"
+        );
+    }
+
+    #[test]
+    fn multline_single_error() {
+        let e = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "oh no");
+        assert_eq!(format!("{:#}", crate::print_error_chain(e)), "oh no");
+    }
+
+    #[test]
+    fn multline_two_errors() {
+        let e = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "oh no");
+        let e = crate::wrap!(e, "permission denied");
+        assert_eq!(
+            format!("{:#}", crate::print_error_chain(e)),
+            "permission denied
+
+Caused by:
+    oh no\n"
+        );
+    }
+
+    #[test]
+    fn more_than_ten_errors() {
+        let mut e: crate::Error =
+            std::io::Error::new(std::io::ErrorKind::PermissionDenied, "oh no").into();
+        for i in 0..12 {
+            e = crate::wrap!(e, "permission denied {}", i).into();
+        }
+        assert_eq!(
+            format!("{:#}", crate::print_error_chain(e.as_ref())),
+            "permission denied 11
+
+Caused by:
+    0: permission denied 10
+    1: permission denied 9
+    2: permission denied 8
+    3: permission denied 7
+    4: permission denied 6
+    5: permission denied 5
+    6: permission denied 4
+    7: permission denied 3
+    8: permission denied 2
+    9: permission denied 1
+   10: permission denied 0
+   11: oh no\n"
+        );
     }
 }
