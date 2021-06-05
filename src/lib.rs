@@ -64,16 +64,16 @@ impl fmt::Display for ErrorChain<'_> {
                 writeln!(f, "\n\nCaused by:")?;
                 if let Some(second_inner) = first_inner.source() {
                     writeln!(f, "{: >5}: {}", 0, first_inner)?;
-                    writeln!(f, "{: >5}: {}", 1, second_inner)?;
+                    write!(f, "{: >5}: {}", 1, second_inner)?;
                     error = second_inner;
                     let mut n = 2;
                     while let Some(inner) = error.source() {
-                        writeln!(f, "{: >5}: {}", n, inner)?;
+                        write!(f, "\n{: >5}: {}", n, inner)?;
                         error = inner;
                         n += 1;
                     }
                 } else {
-                    writeln!(f, "    {}", first_inner)?;
+                    write!(f, "    {}", first_inner)?;
                 }
             }
         } else {
@@ -246,7 +246,7 @@ mod tests {
 
 Caused by:
     0: unknown error 7
-    1: unknown error 7\n"
+    1: unknown error 7"
         );
     }
 
@@ -265,7 +265,7 @@ Caused by:
             "permission denied
 
 Caused by:
-    oh no\n"
+    oh no"
         );
     }
 
@@ -292,7 +292,7 @@ Caused by:
     8: permission denied 2
     9: permission denied 1
    10: permission denied 0
-   11: oh no\n"
+   11: oh no"
         );
     }
 }
