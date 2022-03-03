@@ -1,6 +1,6 @@
 [package]
 name = "ees"
-version = "0.2.5"
+version = "1.0.0"
 authors = []
 edition = "2018"
 license = "CC0-1.0"
